@@ -186,15 +186,18 @@ const boardSchema = new mongoose.Schema(
 );
 
 boardSchema.pre("save", function syncColumnDataBeforeSave() {
-  const columns = Array.isArray(this.columns) ? this.columns : [];
-  const groups = Array.isArray(this.groups) ? this.groups : [];
+  const columns = (Array.isArray(this.columns) ? this.columns : []).filter(Boolean);
+  const groups = (Array.isArray(this.groups) ? this.groups : []).filter(Boolean);
 
   const valuesByColumn = columns.reduce((acc, column) => {
-    acc[String(column._id)] = {};
+    if (column?._id) {
+      acc[String(column._id)] = {};
+    }
     return acc;
   }, {});
 
   groups.forEach((group) => {
+    if (!group) return;
     (group.tasks || []).forEach((task) => {
       const taskId = String(task?._id || "");
       if (!taskId) return;
@@ -209,6 +212,7 @@ boardSchema.pre("save", function syncColumnDataBeforeSave() {
   });
 
   columns.forEach((column) => {
+    if (!column?._id) return;
     const key = String(column?._id || "");
     column.data = valuesByColumn[key] || {};
   });

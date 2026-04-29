@@ -256,7 +256,7 @@ const updateNote = async (req, res) => {
     const note = await Note.findOneAndUpdate(
       { _id: req.params.id, companyId: req.user.companyId },
       payload,
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
 
     if (!note) return res.status(404).json({ message: "Note not found" });

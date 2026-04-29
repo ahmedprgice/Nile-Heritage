@@ -1018,6 +1018,17 @@ exports.deleteGroup = async (req, res) => {
 exports.addTask = async (req, res) => {
   try {
     const { boardId, groupId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(String(boardId || ""))) {
+      return res.status(400).json({
+        message: "Invalid board id",
+      });
+    }
+    if (!mongoose.Types.ObjectId.isValid(String(groupId || ""))) {
+      return res.status(400).json({
+        message: "Invalid group id",
+      });
+    }
+
     const rawName =
       req.body?.name ??
       req.body?.title ??
@@ -1040,7 +1051,13 @@ exports.addTask = async (req, res) => {
       });
     }
 
-    const group = board.groups.id(groupId);
+    if (!Array.isArray(board.groups)) {
+      board.groups = [];
+    }
+
+    const group = board.groups.find(
+      (entry) => String(entry?._id || "") === String(groupId)
+    );
 
     if (!group) {
       return res.status(404).json({
@@ -1052,13 +1069,51 @@ exports.addTask = async (req, res) => {
       group.tasks = [];
     }
 
-    group.tasks.push({
+    const nextTask = {
       name,
       values: buildDefaultTaskValues(board.columns),
-    });
+    };
+    group.tasks.push(nextTask);
 
     // Save only modified paths to avoid legacy unrelated data causing task-create failures.
-    await board.save({ validateModifiedOnly: true });
+    // If legacy document shape still blocks save, fall back to direct atomic update.
+    try {
+      await board.save({ validateModifiedOnly: true });
+    } catch (saveError) {
+      console.warn("[boards.addTask] save fallback to atomic push", {
+        boardId,
+        groupId,
+        error: saveError?.message,
+      });
+
+      const fallbackBoard = await Board.findOneAndUpdate(
+        {
+          _id: boardId,
+          companyId: req.user.companyId,
+          "groups._id": groupId,
+        },
+        {
+          $push: {
+            "groups.$.tasks": {
+              name,
+              values: buildDefaultTaskValues(board.columns),
+            },
+          },
+        },
+        { returnDocument: 'after' }
+      );
+
+      if (!fallbackBoard) {
+        return res.status(404).json({
+          message: "Group not found",
+        });
+      }
+
+      return res.status(201).json({
+        message: "Task added successfully",
+        board: fallbackBoard,
+      });
+    }
 
     res.status(201).json({
       message: "Task added successfully",

@@ -606,7 +606,7 @@ const archiveChannel = async (userId, channelId) => {
   const updated = await Channel.findOneAndUpdate(
     { _id: channelId },
     { $set: { isArchived: true } },
-    { new: true }
+    { returnDocument: 'after' }
   ).lean();
 
   return {
@@ -667,7 +667,7 @@ const addMembersToChannel = async (userId, payload) => {
       $set: { allowedSenders: nextAllowedSenders },
       $addToSet: { members: { $each: [...nextMembers] } },
     },
-    { new: true }
+    { returnDocument: 'after' }
   ).lean();
 
   return {
@@ -966,7 +966,7 @@ const updateRead = async (userId, payload) => {
     },
     {
       upsert: true,
-      new: true,
+      returnDocument: 'after',
       setDefaultsOnInsert: true,
     }
   ).lean();
@@ -1143,7 +1143,7 @@ const setPresence = async (userId, status) => {
         lastSeenAt: now,
       },
     },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
   );
 
   return {

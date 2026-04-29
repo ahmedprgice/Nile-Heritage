@@ -362,7 +362,7 @@ router.patch("/:id/activate", requirePermission("workspace:activate"), async (re
         ...workspaceAccessScope(req),
       },
       { isActive: true },
-      { new: true }
+      { returnDocument: 'after' }
     ).populate({ path: "boards", match: { companyId: req.user.companyId } });
 
     if (!workspace) {
@@ -405,7 +405,7 @@ router.delete("/:id", requirePermission("workspace:delete"), async (req, res) =>
         { isActive: true },
         {
           sort: { updatedAt: -1 },
-          new: true,
+          returnDocument: 'after',
         }
       ).populate({ path: "boards", match: { companyId: req.user.companyId } });
     }

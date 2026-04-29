@@ -14,6 +14,7 @@ const authRoutes = require("./routes/auth");
 const requireAuth = require("./middleware/requireAuth");
 const { initChatSocket } = require("./socket/chat.socket");
 const notificationsRoutes = require("./routes/notifications");
+const bootstrapRoutes = require("./routes/bootstrap");
 const boardRoutes = require("./routes/boards");
 const noteRoutes = require("./routes/notes");
 const subscriptionRoutes = require("./routes/subscriptions");
@@ -170,6 +171,7 @@ app.use("/api/auth", authRoutes);
 // Protected routes
 app.use(requireAuth);
 app.use("/api/tasks", taskRoutes);
+app.use("/api/bootstrap", bootstrapRoutes);
 app.use("/api/workspaces", workspaceRoutes);
 app.use("/api/activities", activitiesRoutes);
 app.use("/api/chat", chatRoutes);
